@@ -30,13 +30,15 @@ def merge_columns():
 
     # Converting the list of lists to a list of comma-separated strings (for
     # csv)
-    remaining_values = map(lambda col: ','.join(list(map(lambda val: val.lower(), col))), remaining_values)
+    remaining_values = map(
+        lambda col: ','.join(list(map(lambda val: val.lower(), col))),
+        remaining_values)
 
     # Combining the first two columns with the list of remaining non-None
     # values
     result = pd.concat(
         [first_two_columns, pd.DataFrame(remaining_values,
-                                         columns=['Merged Column'])],
+                                         columns=['MergedColumn'])],
         axis=1)
 
     # Saving the result to an Excel file
@@ -51,21 +53,38 @@ def get_merged_df():
                                    'data/mentions.csv'))
     df2 = pd.read_pickle(os.path.join(PROJECT_ROOT,
                                       'data/mentions_texts.pickle'))
+    df2 = df2.loc[:, df2.columns != 'MessageID']
+
     df3 = pd.read_csv(os.path.join(PROJECT_ROOT,
                                    'data/sentiment.csv'))
     df4 = pd.read_pickle(os.path.join(PROJECT_ROOT,
                                       'data/sentiment_texts.pickle'))
-    print(df2.columns)
+
+    # Merge dataframes on 'ChannelID' and 'messageid' columns
+    mentions_merged_df = pd.merge(df1,
+                                  df2,
+                                  on=['ChannelID', 'messageid', 'issuerid'])
+    mentions_merged_df.rename(columns={'messageid': 'MessageID'}, inplace=True)
 
     # Merge dataframes on 'ChannelID' amd 'MessageID' columns
-    mentions_merged_df = pd.merge(df1, df2, on=['ChannelID', 'MessageID'])
+    sentiments_merged_df = pd.merge(df3,
+                                    df4,
+                                    on=['ChannelID',
+                                        'MessageID',
+                                        'issuerid',
+                                        'SentimentScore'])
 
-    # Merge dataframes on 'ChannelID' amd 'MessageID' columns
-    sentiments_merged_df = pd.merge(df3, df4, on=['ChannelID', 'MessageID'])
-
+    # Merge dataframes
     result_merged_df = pd.merge(mentions_merged_df,
                                 sentiments_merged_df,
-                                on=['ChannelID', 'MessageID', 'issuerid'])
-    print(result_merged_df)
+                                on=['ChannelID',
+                                    'MessageID',
+                                    'issuerid',
+                                    'IsForward',
+                                    'MessageText',
+                                    'DatePosted',
+                                    'DateAdded'])
 
     return result_merged_df
+
+get_merged_df()
