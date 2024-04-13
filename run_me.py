@@ -3,7 +3,7 @@ import pathlib
 import typing as tp
 
 import final_solution
-import final_solution.solution_stupid
+import final_solution.solution
 
 
 PATH_TO_TEST_DATA = pathlib.Path("data") / "test_texts.json"
@@ -28,5 +28,5 @@ def main():
     save_data(scores)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
