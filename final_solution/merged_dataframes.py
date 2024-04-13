@@ -11,10 +11,9 @@ def get_project_root() -> Path:
 PROJECT_ROOT = get_project_root()
 
 
-def merge_columns():
-    with open(os.path.join(PROJECT_ROOT,
-                           'data/names.xlsx'), 'rb') as names_file:
-        names = pd.read_excel(names_file, header=3)
+def get_merged_df():
+    names = pd.read_excel(os.path.join(PROJECT_ROOT, 'data/names.xlsx'))
+    print(names.columns)
 
     # Extracting the first two columns
     first_two_columns = names.iloc[:, :2]
@@ -25,29 +24,15 @@ def merge_columns():
     # Iterating over each row in the DataFrame
     for index, row in names.iterrows():
         # Filtering out None values and adding non-None values to the list
-        non_none_values = [value for value in row[2:] if pd.notnull(value)]
+        non_none_values = [value.lower() for value in row[2:] if pd.notnull(value)]
         remaining_values.append(non_none_values)
-
-    # Converting the list of lists to a list of comma-separated strings (for
-    # csv)
-    remaining_values = map(
-        lambda col: ','.join(list(map(lambda val: val.lower(), col))),
-        remaining_values)
 
     # Combining the first two columns with the list of remaining non-None
     # values
-    result = pd.concat(
-        [first_two_columns, pd.DataFrame(remaining_values,
-                                         columns=['MergedColumn'])],
+    names_file_df = pd.concat(
+        [first_two_columns, pd.DataFrame({'MergedColumn': remaining_values})],
         axis=1)
 
-    # Saving the result to an Excel file
-    with open(os.path.join(PROJECT_ROOT,
-                           'data/merged_names.xlsx'), 'wb') as merged_file:
-        result.to_excel(merged_file)
-
-
-def get_merged_df():
     # Load dataframes
     df1 = pd.read_csv(os.path.join(PROJECT_ROOT,
                                    'data/mentions.csv'))
@@ -85,6 +70,12 @@ def get_merged_df():
                                     'DatePosted',
                                     'DateAdded'])
 
-    return result_merged_df
+    # get the unnamed columns
+    unnamed_columns = [col for col in result_merged_df.columns if 'Unnamed' in col]
 
-get_merged_df()
+    # Drop the unnamed columns
+    merge_data_df = result_merged_df.drop(columns=unnamed_columns)
+
+    result_merged_df = pd.merge(names_file_df, merge_data_df, on='issuerid')
+
+    return result_merged_df
